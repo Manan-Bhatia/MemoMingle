@@ -1,19 +1,13 @@
 import { View, Text, StyleSheet, TextInput } from "react-native";
-import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../constants/colors";
 import { Ionicons } from "@expo/vector-icons";
+import { StatusBar } from "expo-status-bar";
+import { Link } from "expo-router";
 
 export default function App() {
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar style="light" />
-            {/* Top Bar */}
-            <View style={styles.topBar}>
-                <Text style={styles.headingText}>MemoMingle</Text>
-            </View>
-            {/* Main Body */}
-            <View style={styles.mainBody}></View>
+        <View style={styles.container}>
             {/* Bottom Bar */}
             <View style={styles.bottomBar}>
                 <TextInput
@@ -21,35 +15,23 @@ export default function App() {
                     placeholder="Search"
                     placeholderTextColor={colors.White}
                 />
-                <Ionicons
-                    name="add-circle-sharp"
-                    size={60}
-                    color={colors.Silver}
-                />
+                <Link href="/add">
+                    <Ionicons
+                        name="add-circle-sharp"
+                        size={60}
+                        color={colors.Silver}
+                    />
+                </Link>
             </View>
-        </SafeAreaView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.Night,
     },
-    topBar: {
-        flex: 0.5,
-        justifyContent: "center",
-        paddingHorizontal: 15,
-    },
-    headingText: {
-        color: colors.Silver,
-        fontWeight: "500",
-        fontSize: 24,
-    },
-    mainBody: {
-        flex: 10,
-        // backgroundColor: colors.Silver,
-    },
+
     bottomBar: {
         paddingHorizontal: 15,
         flex: 1,
@@ -67,5 +49,6 @@ const styles = StyleSheet.create({
         textAlign: "auto",
         flex: 1,
         borderRadius: 10,
+        color: colors.White,
     },
 });
