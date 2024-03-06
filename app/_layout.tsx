@@ -1,4 +1,4 @@
-import { Slot } from "expo-router";
+import { Slot, usePathname } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StyleSheet, View, Text, ScrollView } from "react-native";
 import { colors } from "../constants/colors";
@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 
 export default function Layout() {
     const [notes, setNotes] = useState<string[]>([]);
-
+    const pathName = usePathname();
     const getNotes = async () => {
         const res = await fetch("http:/10.0.2.2:3000/api/get-notes-names", {
             method: "GET",
@@ -20,7 +20,7 @@ export default function Layout() {
     };
     useEffect(() => {
         getNotes();
-    }, []);
+    }, [pathName]);
     return (
         <SafeAreaView style={styles.container}>
             {/* Top Bar */}
@@ -29,9 +29,7 @@ export default function Layout() {
             </View>
             {/* Main Body */}
             <View style={styles.mainBody}>
-                <ScrollView
-                    contentContainerStyle={{ gap: 10}}
-                >
+                <ScrollView contentContainerStyle={{ gap: 10 }}>
                     {notes ? (
                         notes?.map((note, index) => {
                             return (
