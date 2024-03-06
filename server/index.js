@@ -95,3 +95,11 @@ app.delete("/api/delete-note", async (req, res) => {
             return res.status(500).json({ message: "Error deleting note" });
         });
 });
+
+// get all collection names
+app.get("/api/get-notes-names", async (req, res) => {
+    const collectionNames = (
+        await mongoose.connection.db.listCollections().toArray()
+    ).map((collection) => collection.name);
+    res.status(200).json({ Notes: collectionNames });
+});
