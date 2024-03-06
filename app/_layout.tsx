@@ -7,13 +7,13 @@ import { StatusBar } from "expo-status-bar";
 export default function Layout() {
     return (
         <SafeAreaView style={styles.container}>
+            <StatusBar style="light" />
             {/* Top Bar */}
             <View style={styles.topBar}>
                 <Text style={styles.headingText}>MemoMingle</Text>
             </View>
             {/* Main Body */}
             <View style={styles.mainBody}></View>
-            <StatusBar style="light" />
             <Slot />
         </SafeAreaView>
     );

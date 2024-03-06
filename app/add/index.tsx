@@ -1,20 +1,43 @@
-import { View, Pressable, TextInput, StyleSheet } from "react-native";
+import {
+    View,
+    Pressable,
+    TextInput,
+    StyleSheet,
+    ToastAndroid,
+} from "react-native";
 import { colors } from "../../constants/colors";
 import { Ionicons } from "@expo/vector-icons";
-import { Link } from "expo-router";
-import { useRef, useEffect } from "react";
+import { Link, useRouter } from "expo-router";
+import { useRef, useEffect, useState } from "react";
 
 export default function Add() {
+    const router = useRouter();
     const inputField = useRef<TextInput | null>(null);
+    const [textFieldContent, setTextFieldContent] = useState<string | "">("");
     useEffect(() => {
         inputField?.current?.focus();
     }, []);
-    const handleSave = () => {
-        console.log('saved')
-    }
+    const handleSave = async () => {
+        const res = await fetch("http://10.0.2.2:3000/api/create-new-note", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ title: textFieldContent }),
+        });
+        const data = await res.json();
+        ToastAndroid.show(data.message, ToastAndroid.SHORT);
+        if (res.status === 201) {
+            setTextFieldContent("");
+            inputField?.current?.blur();
+            router.navigate("/");
+        }
+    };
     return (
         <View style={styles.bottomBar}>
             <TextInput
+                value={textFieldContent}
+                onChange={(e) => setTextFieldContent(e.nativeEvent.text)}
                 ref={inputField}
                 style={styles.inputText}
                 placeholder="Note title"
@@ -56,6 +79,6 @@ const styles = StyleSheet.create({
         textAlign: "auto",
         flex: 1,
         borderRadius: 10,
-        color: colors.White
+        color: colors.White,
     },
 });
