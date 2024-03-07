@@ -1,12 +1,29 @@
-import { Slot, usePathname } from "expo-router";
+import { Slot, router, usePathname } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { StyleSheet, View, Text, ScrollView } from "react-native";
+import {
+    StyleSheet,
+    View,
+    Text,
+    ScrollView,
+    Pressable,
+    ToastAndroid,
+    Alert,
+} from "react-native";
 import { colors } from "../constants/colors";
 import { StatusBar } from "expo-status-bar";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import Swipeable from "react-native-gesture-handler/Swipeable";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome5 } from "@expo/vector-icons";
 
 export default function Layout() {
-    const [notes, setNotes] = useState<string[]>([]);
+    interface note {
+        name: string;
+        id: string;
+    }
+    const swipeableRefs = useRef<{ [key: number]: Swipeable | null }>({});
+    const [notes, setNotes] = useState<note[]>([]);
     const pathName = usePathname();
     const getNotes = async () => {
         const res = await fetch("http:/10.0.2.2:3000/api/get-notes-names", {
@@ -21,6 +38,27 @@ export default function Layout() {
     useEffect(() => {
         getNotes();
     }, [pathName]);
+
+    const handleDeleteNote = async (note: note, index: number) => {
+        swipeableRefs.current[index]?.close();
+        const res = await fetch("http://10.0.2.2:3000/api/delete-note", {
+            headers: {
+                "Content-Type": "application/json",
+            },
+            method: "DELETE",
+            body: JSON.stringify({ title: note.name }),
+        });
+        const data = await res.json();
+        ToastAndroid.show(data.message, ToastAndroid.SHORT);
+        if (res.status === 200) {
+            getNotes();
+        }
+    };
+    const handleEditNote = async (note: note, index: number) => {
+        swipeableRefs.current[index]?.close();
+        router.navigate(`/editTitle/?oldName=${note.name}`);
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             {/* Top Bar */}
@@ -29,21 +67,74 @@ export default function Layout() {
             </View>
             {/* Main Body */}
             <View style={styles.mainBody}>
-                <ScrollView contentContainerStyle={{ gap: 10 }}>
-                    {notes ? (
-                        notes?.map((note, index) => {
-                            return (
-                                <View style={styles.bodyItem} key={index}>
-                                    <Text style={styles.bodyText}>{note}</Text>
-                                </View>
-                            );
-                        })
-                    ) : (
-                        <View>
-                            <Text>No Notes</Text>
-                        </View>
-                    )}
-                </ScrollView>
+                <GestureHandlerRootView>
+                    <ScrollView contentContainerStyle={{ gap: 10 }}>
+                        {notes ? (
+                            notes?.map((note, index) => {
+                                return (
+                                    <Swipeable
+                                        ref={(ref) =>
+                                            (swipeableRefs.current[index] = ref)
+                                        }
+                                        overshootLeft={false}
+                                        key={index}
+                                        renderLeftActions={() => (
+                                            <View
+                                                style={{
+                                                    flexDirection: "row",
+                                                    gap: 20,
+                                                    justifyContent: "center",
+                                                    alignItems: "center",
+                                                    flex: 0.3,
+                                                    padding: 10,
+                                                }}
+                                            >
+                                                <Pressable
+                                                    onPress={() =>
+                                                        handleDeleteNote(
+                                                            note,
+                                                            index
+                                                        )
+                                                    }
+                                                >
+                                                    <Ionicons
+                                                        name="trash-bin-sharp"
+                                                        size={40}
+                                                        color={colors.Silver}
+                                                    />
+                                                </Pressable>
+                                                <Pressable
+                                                    onPress={() =>
+                                                        handleEditNote(
+                                                            note,
+                                                            index
+                                                        )
+                                                    }
+                                                >
+                                                    <FontAwesome5
+                                                        name="edit"
+                                                        size={40}
+                                                        color={colors.Silver}
+                                                    />
+                                                </Pressable>
+                                            </View>
+                                        )}
+                                    >
+                                        <View style={styles.bodyItem}>
+                                            <Text style={styles.bodyText}>
+                                                {note.name}
+                                            </Text>
+                                        </View>
+                                    </Swipeable>
+                                );
+                            })
+                        ) : (
+                            <View>
+                                <Text>No Notes</Text>
+                            </View>
+                        )}
+                    </ScrollView>
+                </GestureHandlerRootView>
             </View>
             <StatusBar style="light" />
             <Slot />
@@ -68,7 +159,7 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         paddingVertical: 16,
         paddingHorizontal: 8,
-        borderRadius: 10,
+        // borderRadius: 10,
     },
     bodyText: {
         color: colors.White,

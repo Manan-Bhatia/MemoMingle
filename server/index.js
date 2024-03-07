@@ -31,20 +31,22 @@ app.post("/api/create-new-note", (req, res) => {
     mongoose.connection.db
         .createCollection(title)
         .then(() => {
-            res.status(201).json({
+            return res.status(201).json({
                 message: "Note created successfully",
             });
         })
-        .catch((err) =>
-            res.status(500).json({ message: "Error creating new note" })
-        );
+        .catch((err) => {
+            return res.status(500).json({ message: "Error creating new note" });
+        });
 });
 
 // edit collection name
 app.post("/api/edit-note-name", async (req, res) => {
     const { oldName, newName } = req.body;
     if (!oldName || !newName) {
-        res.status(400).json({ message: "oldName and newName are required" });
+        return res
+            .status(400)
+            .json({ message: "oldName and newName are required" });
     } else if (String(newName).length < 3 || String(newName).length > 20) {
         return res
             .status(400)
@@ -58,17 +60,17 @@ app.post("/api/edit-note-name", async (req, res) => {
         mongoose.connection.db
             .renameCollection(oldName, newName)
             .then(() => {
-                res.status(200).json({
+                return res.status(200).json({
                     message: "Note name updated successfully",
                 });
             })
             .catch((err) => {
-                res.status(500).json({
+                return res.status(500).json({
                     message: "Error updating note name",
                 });
             });
     } else {
-        res.status(404).json({ message: "Note not found" });
+        return res.status(404).json({ message: "Note not found" });
     }
 });
 
@@ -100,6 +102,11 @@ app.delete("/api/delete-note", async (req, res) => {
 app.get("/api/get-notes-names", async (req, res) => {
     const collectionNames = (
         await mongoose.connection.db.listCollections().toArray()
-    ).map((collection) => collection.name);
-    res.status(200).json({ Notes: collectionNames });
+    ).map((collection) => {
+        return {
+            name: collection.name,
+            id: collection.info.uuid,
+        };
+    });
+    return res.status(200).json({ Notes: collectionNames });
 });
