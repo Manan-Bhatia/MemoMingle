@@ -5,7 +5,7 @@ import {
     StyleSheet,
     ToastAndroid,
 } from "react-native";
-import { colors } from "../../constants/colors";
+import { colors } from "../../../constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, useRouter, useLocalSearchParams } from "expo-router";
 import { useRef, useEffect, useState } from "react";
@@ -45,6 +45,7 @@ export default function EditTitle() {
             <TextInput
                 value={textFieldContent}
                 onChange={(e) => setTextFieldContent(e.nativeEvent.text)}
+                maxLength={20}
                 ref={inputField}
                 style={styles.inputText}
                 placeholder="Note title"
