@@ -199,7 +199,7 @@ app.delete("/api/delete-message", async (req, res) => {
 });
 
 // get all messages from a collection
-app.get("/api/get-messages", async (req, res) => {
+app.post("/api/get-messages", async (req, res) => {
     const { note } = req.body;
     const collectionExits = (
         await mongoose.connection.db.listCollections().toArray()
