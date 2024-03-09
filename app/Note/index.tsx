@@ -13,7 +13,10 @@ import { Ionicons } from "@expo/vector-icons";
 import {
     GestureHandlerRootView,
     ScrollView,
+    Gesture,
+    GestureDetector,
 } from "react-native-gesture-handler";
+import { FontAwesome5 } from "@expo/vector-icons";
 
 export default function Note() {
     const { noteTitle } = useLocalSearchParams();
@@ -58,6 +61,65 @@ export default function Note() {
             setInputFieldText("");
         }
     };
+    const [selectMode, setSelectMode] = useState<{
+        activated: boolean;
+        id: string;
+    }>({ activated: false, id: "" });
+    const createLongPressGesture = (message: Message) => {
+        return Gesture.LongPress().onEnd(() => {
+            setSelectMode({ activated: true, id: message.id });
+        });
+    };
+    const handleDeleteMessage = async () => {
+        const response = await fetch("http:10.0.2.2:3000/api/delete-message", {
+            headers: {
+                "Content-Type": "application/json",
+            },
+            method: "DELETE",
+            body: JSON.stringify({ note: noteName, id: selectMode.id }),
+        });
+        const data = await response.json();
+        ToastAndroid.show(data.message, ToastAndroid.SHORT);
+        if (response.status === 200) {
+            setSelectMode({ activated: false, id: "" });
+            getMessages(noteName);
+        }
+    };
+    const [editing, setEditing] = useState<boolean>(false);
+    const startEditingMessage = () => {
+        setEditing(true);
+        setSelectMode((prev) => ({ ...prev, activated: false }));
+        const message = messages.find(
+            (message) => message.id === selectMode.id
+        );
+        if (message) {
+            setInputFieldText(message.text);
+            setTimeout(() => {
+                inputField.current?.focus();
+            }, 100);
+        }
+    };
+    const handleEditMessage = async () => {
+        const response = await fetch("http:10.0.2.2:3000/api/edit-message", {
+            headers: {
+                "Content-Type": "application/json",
+            },
+            method: "POST",
+            body: JSON.stringify({
+                note: noteName,
+                id: selectMode.id,
+                message: inputFieldText,
+            }),
+        });
+        const data = await response.json();
+        ToastAndroid.show(data.message, ToastAndroid.SHORT);
+        if (response.status === 200) {
+            setEditing(false);
+            setInputFieldText("");
+            getMessages(noteName);
+            inputField.current?.blur();
+        }
+    };
     return (
         <>
             {/* Top bar */}
@@ -76,19 +138,23 @@ export default function Note() {
                         }
                     >
                         {messages.map((message, index) => {
+                            const longPressGesture =
+                                createLongPressGesture(message);
                             return (
-                                <View
-                                    style={styles.messageContainer}
+                                <GestureDetector
                                     key={index}
+                                    gesture={longPressGesture}
                                 >
-                                    <Text style={styles.messageText}>
-                                        {message.text}
-                                    </Text>
+                                    <View style={styles.messageContainer}>
+                                        <Text style={styles.messageText}>
+                                            {message.text}
+                                        </Text>
 
-                                    <Text style={styles.messageSubText}>
-                                        {message.updatedAt}
-                                    </Text>
-                                </View>
+                                        <Text style={styles.messageSubText}>
+                                            {message.updatedAt}
+                                        </Text>
+                                    </View>
+                                </GestureDetector>
                             );
                         })}
                     </ScrollView>
@@ -96,24 +162,69 @@ export default function Note() {
             </View>
 
             {/* Bottom bar */}
-            <View style={styles.bottomBar}>
-                <TextInput
-                    ref={inputField}
-                    value={inputFieldText}
-                    onChange={(e) => setInputFieldText(e.nativeEvent.text)}
-                    multiline
-                    style={styles.inputText}
-                    placeholder="What's on your mind?"
-                    placeholderTextColor={colors.White}
-                />
-                <Pressable onPress={handleAddMessage}>
-                    <Ionicons
-                        name="send-sharp"
-                        size={40}
-                        color={colors.Silver}
+            {selectMode.activated ? (
+                <View style={styles.bottomBar}>
+                    <Pressable
+                        onPress={() =>
+                            setSelectMode({ activated: false, id: "" })
+                        }
+                    >
+                        <Ionicons
+                            name="close"
+                            size={35}
+                            color={colors.Silver}
+                        />
+                    </Pressable>
+                    <View style={{ flexDirection: "row", gap: 25 }}>
+                        <Pressable onPress={handleDeleteMessage}>
+                            <Ionicons
+                                name="trash-bin-sharp"
+                                size={35}
+                                color={colors.Silver}
+                            />
+                        </Pressable>
+                        <Pressable onPress={startEditingMessage}>
+                            <FontAwesome5
+                                name="edit"
+                                size={35}
+                                color={colors.Silver}
+                            />
+                        </Pressable>
+                    </View>
+                </View>
+            ) : (
+                <View style={styles.bottomBar}>
+                    <TextInput
+                        ref={inputField}
+                        value={inputFieldText}
+                        onChange={(e) => setInputFieldText(e.nativeEvent.text)}
+                        multiline
+                        onContentSizeChange={(e) =>
+                            (innerHeight = e.nativeEvent.contentSize.height)
+                        }
+                        style={styles.inputText}
+                        placeholder="What's on your mind?"
+                        placeholderTextColor={colors.White}
                     />
-                </Pressable>
-            </View>
+                    {editing ? (
+                        <Pressable onPress={handleEditMessage}>
+                            <Ionicons
+                                name="checkmark-circle"
+                                size={40}
+                                color={colors.Silver}
+                            />
+                        </Pressable>
+                    ) : (
+                        <Pressable onPress={handleAddMessage}>
+                            <Ionicons
+                                name="send-sharp"
+                                size={40}
+                                color={colors.Silver}
+                            />
+                        </Pressable>
+                    )}
+                </View>
+            )}
         </>
     );
 }
