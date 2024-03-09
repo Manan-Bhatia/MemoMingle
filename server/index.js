@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import mongoose from "mongoose";
+import getNoteModel from "./Message.js";
 dotenv.config();
 
 const app = express();
@@ -109,4 +110,90 @@ app.get("/api/get-notes-names", async (req, res) => {
         };
     });
     return res.status(200).json({ Notes: collectionNames });
+});
+
+// add message in a collection
+app.post("/api/add-message", async (req, res) => {
+    const { note, message } = req.body;
+    console.log(note);
+    const collectionExits = (
+        await mongoose.connection.db.listCollections().toArray()
+    ).some((collection) => collection.name === note);
+    if (collectionExits) {
+        if (String(message).length < 1) {
+            return res.status(400).json({ message: "Message is required" });
+        }
+        const newMessage = {
+            message: message,
+        };
+
+        const Note = getNoteModel(note);
+        Note.create(newMessage)
+            .then(() => {
+                return res
+                    .status(201)
+                    .json({ message: "Message added successfully" });
+            })
+            .catch(() => {
+                return res
+                    .status(500)
+                    .json({ message: "Error adding message" });
+            });
+    } else {
+        return res.status(404).json({ message: "Note not found" });
+    }
+});
+
+// edit message in a collection
+app.post("/api/edit-message", async (req, res) => {
+    const { note, id, message } = req.body;
+    const collectionExits = (
+        await mongoose.connection.db.listCollections().toArray()
+    ).some((collection) => collection.name === note);
+    if (collectionExits) {
+        if (String(message).length < 1) {
+            return res.status(400).json({ message: "Message is required" });
+        }
+        const updatedMessage = {
+            message: message,
+        };
+        const Note = getNoteModel(note);
+        Note.findByIdAndUpdate(id, updatedMessage, { new: true })
+            .then(() => {
+                return res
+                    .status(200)
+                    .json({ message: "Message updated successfully" });
+            })
+            .catch(() => {
+                return res
+                    .status(500)
+                    .json({ message: "Error updating message" });
+            });
+    } else {
+        return res.status(404).json({ message: "Note not found" });
+    }
+});
+
+// delete a message from a collection
+app.delete("/api/delete-message", async (req, res) => {
+    const { note, id } = req.body;
+    const collectionExits = (
+        await mongoose.connection.db.listCollections().toArray()
+    ).some((collection) => collection.name === note);
+    if (collectionExits) {
+        const Note = getNoteModel(note);
+        Note.findByIdAndDelete(id)
+            .then(() => {
+                return res
+                    .status(200)
+                    .json({ message: "Message deleted successfully" });
+            })
+            .catch(() => {
+                return res
+                    .status(500)
+                    .json({ message: "Error deleting message" });
+            });
+    } else {
+        return res.status(404).json({ message: "Note not found" });
+    }
 });
