@@ -197,3 +197,42 @@ app.delete("/api/delete-message", async (req, res) => {
         return res.status(404).json({ message: "Note not found" });
     }
 });
+
+// get all messages from a collection
+app.get("/api/get-messages", async (req, res) => {
+    const { note } = req.body;
+    const collectionExits = (
+        await mongoose.connection.db.listCollections().toArray()
+    ).some((collection) => collection.name === note);
+    if (collectionExits) {
+        const Note = getNoteModel(note);
+        Note.find()
+            .then((messages) => {
+                const data = messages.map((message) => {
+                    return {
+                        id: message._id,
+                        text: message.message,
+                        updatedAt: getTime(message.updatedAt),
+                    };
+                });
+                return res.status(200).json({ messages: data });
+            })
+            .catch(() => {
+                return res
+                    .status(500)
+                    .json({ message: "Error getting messages" });
+            });
+    } else {
+        return res.status(404).json({ message: "Note not found" });
+    }
+});
+
+function getTime(dateStr) {
+    let date = new Date(dateStr);
+    let hours = date.getHours();
+    let minutes = date.getMinutes();
+    hours = hours < 10 ? "0" + hours : hours;
+    minutes = minutes < 10 ? "0" + minutes : minutes;
+    let time = `${hours}:${minutes}`;
+    return time;
+}
